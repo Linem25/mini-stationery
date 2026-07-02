@@ -1,0 +1,104 @@
+@model StationeryDetailViewModel
+
+@{
+    ViewData["Title"] = "Stationery Detail";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Stationery Detail</h2>
+        <p class="page-description">
+            Thông tin chi tiết của mặt hàng trong kho.
+        </p>
+    </div>
+
+    <a class="btn btn-light" href="/Stationery">
+        Quay lại danh sách
+    </a>
+</div>
+
+<div class="detail-layout">
+    <div>
+        <table class="table table-bordered">
+            <tr>
+                <th>ID</th>
+                <td>@Model.Id</td>
+            </tr>
+
+            <tr>
+                <th>SKU</th>
+                <td>@Model.Sku</td>
+            </tr>
+
+            <tr>
+                <th>Tên mặt hàng</th>
+                <td>@Model.Name</td>
+            </tr>
+
+            <tr>
+                <th>Nhóm mặt hàng</th>
+                <td>@Model.Category</td>
+            </tr>
+
+            <tr>
+                <th>Nhà cung cấp</th>
+                <td>@Model.Supplier</td>
+            </tr>
+
+            <tr>
+                <th>Giá bán</th>
+                <td>@Model.PriceText</td>
+            </tr>
+
+            <tr>
+                <th>Số lượng tồn kho</th>
+                <td>@Model.Quantity</td>
+            </tr>
+
+            <tr>
+                <th>Mức tồn tối thiểu</th>
+                <td>@Model.MinStock</td>
+            </tr>
+
+            <tr>
+                <th>Giá trị tồn kho</th>
+                <td>@Model.InventoryValueText</td>
+            </tr>
+
+            <tr>
+                <th>Trạng thái</th>
+                <td>@Model.StockStatus</td>
+            </tr>
+
+            <tr>
+                <th>Gợi ý nhập hàng</th>
+                <td>@Model.ReorderSuggestion</td>
+            </tr>
+
+            <tr>
+                <th>Cập nhật lần cuối</th>
+                <td>@Model.LastUpdatedText</td>
+            </tr>
+        </table>
+    </div>
+
+    <div>
+        <div class="side-card warning">
+            <h4>Trạng thái tồn kho</h4>
+            <h3>@Model.StockStatus</h3>
+            <p>@Model.ReorderSuggestion</p>
+        </div>
+
+        <div class="side-card info">
+            <h4>Giá trị tồn kho hiện tại</h4>
+            <h3>@Model.InventoryValueText</h3>
+            <p>Tính theo giá bán và số lượng tồn kho hiện có.</p>
+        </div>
+
+        <div class="side-card success">
+            <h4>Cập nhật lần cuối</h4>
+            <h3>@Model.LastUpdatedText</h3>
+            <p>Thông tin mặt hàng được cập nhật gần nhất.</p>
+        </div>
+    </div>
+</div>

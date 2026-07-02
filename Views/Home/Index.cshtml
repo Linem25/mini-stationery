@@ -1,0 +1,37 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="lab-hero">
+    <h1>ASP.NET Core MVC Lab02 - Mini Stationery</h1>
+
+    <p>
+        Bài Lab này hướng dẫn xây dựng một website MVC cơ bản
+        <br />
+        để hiển thị danh mục văn phòng phẩm và tình trạng tồn kho.
+    </p>
+</div>
+
+<div class="info-panel">
+    <h4>Mục tiêu chính của Lab02</h4>
+    <p>
+        Hiểu và sử dụng Controller, ViewModel và Razor Syntax
+        để hiển thị dữ liệu trong ASP.NET Core MVC.
+    </p>
+</div>
+
+<h3>Luồng xử lý chính trong MVC</h3>
+
+<ol class="flow-list">
+    <li>1. User gửi request đến URL.</li>
+    <li>2. Controller Action nhận request.</li>
+    <li>3. Controller gọi Service để lấy dữ liệu.</li>
+    <li>4. Controller chuyển dữ liệu sang ViewModel.</li>
+    <li>5. View dùng Razor để render HTML và trả về cho trình duyệt.</li>
+</ol>
+
+<div class="text-center mt-4">
+    <a class="btn btn-primary btn-lg" href="/Stationery">
+        Đi đến Stationery Catalog
+    </a>
+</div>
