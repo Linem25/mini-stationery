@@ -10,7 +10,6 @@
         <h2 class="page-title">Stationery Catalog</h2>
         <p class="page-description">
             Đây là trang danh sách văn phòng phẩm của cửa hàng.
-            Giao diện được render bằng Partial View.
         </p>
     </div>
 
@@ -46,10 +45,42 @@
 }
 else
 {
-    <div class="stationery-grid">
-        @foreach (var item in Model)
-        {
-            <partial name="_StationeryCard" model="item" />
-        }
-    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Mã hàng</th>
+                <th>Tên mặt hàng</th>
+                <th>Nhóm</th>
+                <th>Giá bán</th>
+                <th>Số lượng</th>
+                <th>Chi tiết</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.SupplyCode</td>
+                    <td>@item.Name</td>
+                    <td>@item.Category</td>
+                    <td>@item.PriceText</td>
+                    <td>@item.Quantity</td>
+                    <td>
+                        <a asp-controller="Stationery"
+                           asp-action="Detail"
+                           asp-route-id="@item.Id">
+                            Xem
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
+
+<p class="mt-4">
+    <a class="btn btn-light" href="/">
+        Quay lại trang chủ
+    </a>
+</p>

@@ -29,4 +29,15 @@ public class StationeryController : Controller
 
         return View(item);
     }
+    public async Task<IActionResult> LowStock()
+{
+    var items = await _stationeryService.GetLowStockAsync();
+    return View(items);
+}
+[HttpGet]
+public async Task<IActionResult> Filter(int? categoryId, decimal? minPrice, decimal? maxPrice)
+{
+    var viewModel = await _stationeryService.FilterAsync(categoryId, minPrice, maxPrice);
+    return View(viewModel);
+}
 }

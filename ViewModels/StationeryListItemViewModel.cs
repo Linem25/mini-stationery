@@ -2,6 +2,7 @@ namespace MiniStationery.Mvc.ViewModels;
 
 public class StationeryListItemViewModel
 {
+    public string SupplyCode { get; set; } = "";
     public int Id { get; set; }
 
     public string Sku { get; set; } = "";

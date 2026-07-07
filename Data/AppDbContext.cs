@@ -28,12 +28,13 @@ public class AppDbContext : DbContext
             entity.HasKey(s => s.Id);
             entity.Property(s => s.Name).IsRequired().HasMaxLength(150);
             entity.Property(s => s.Price).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.SupplyCode).IsRequired().HasMaxLength(20);
             entity.HasOne(s => s.Category)
                   .WithMany(c => c.Stationeries)
                   .HasForeignKey(s => s.CategoryId);
         });
 
-        // ↓↓↓ Đây là phần Seed Data — thêm vào cuối method này ↓↓↓
+        
         modelBuilder.Entity<Category>().HasData(
             new Category { Id = 1, Name = "Bút viết" },
             new Category { Id = 2, Name = "Sổ vở" },
@@ -41,10 +42,12 @@ public class AppDbContext : DbContext
         );
 
         modelBuilder.Entity<Stationery>().HasData(
-            new Stationery { Id = 1, Name = "Bút bi Thiên Long TL-027", Price = 3500, Stock = 120, CategoryId = 1 },
-            new Stationery { Id = 2, Name = "Bút highlight Stabilo Boss", Price = 22000, Stock = 0, CategoryId = 1 },
-            new Stationery { Id = 3, Name = "Vở kẻ ngang Campus 200 trang", Price = 18000, Stock = 4, CategoryId = 2 },
-            new Stationery { Id = 4, Name = "Kéo văn phòng Deli", Price = 15000, Stock = 30, CategoryId = 3 }
-        );
+    new Stationery { Id = 1, SupplyCode = "VPP-0001", Name = "Bút bi Thiên Long TL-027", Price = 3500, Stock = 120, CategoryId = 1 },
+    new Stationery { Id = 2, SupplyCode = "VPP-0002", Name = "Bút highlight Stabilo Boss", Price = 22000, Stock = 0, CategoryId = 1 },
+    new Stationery { Id = 3, SupplyCode = "VPP-0003", Name = "Vở kẻ ngang Campus 200 trang", Price = 18000, Stock = 4, CategoryId = 2 },
+    new Stationery { Id = 4, SupplyCode = "VPP-0004", Name = "Kéo văn phòng Deli", Price = 15000, Stock = 30, CategoryId = 3 }
+);
+
+        
     }
 }

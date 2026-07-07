@@ -27,4 +27,26 @@ public class StationeryRepository : IStationeryRepository
 
     public Task SaveChangesAsync()
         => _context.SaveChangesAsync();
+
+    public async Task<List<Stationery>> FilterAsync(int? categoryId, decimal? minPrice, decimal? maxPrice)
+    {
+        var query = _context.Stationeries.Include(s => s.Category).AsNoTracking().AsQueryable();
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(s => s.CategoryId == categoryId.Value);
+        }
+
+        if (minPrice.HasValue)
+        {
+            query = query.Where(s => s.Price >= minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            query = query.Where(s => s.Price <= maxPrice.Value);
+        }
+
+        return await query.ToListAsync();
+    }
 }

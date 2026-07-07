@@ -23,6 +23,7 @@ public class StationeryService : IStationeryService
         return items.Select(s => new StationeryListItemViewModel
         {
             Id = s.Id,
+            SupplyCode = s.SupplyCode,
             Name = s.Name,
             UnitPrice = s.Price,
             Quantity = s.Stock,
@@ -46,6 +47,53 @@ public class StationeryService : IStationeryService
             Quantity = stationery.Stock,
             MinStock = 0,
             LastUpdatedAt = DateTime.Now
+        };
+    }
+
+    public async Task<List<StationeryListItemViewModel>> GetLowStockAsync()
+    {
+        var items = await _stationeryRepository.GetAllReadOnlyAsync();
+
+        return items
+            .Where(s => s.Stock <= _settings.LowStockThreshold)
+            .Select(s => new StationeryListItemViewModel
+            {
+                Id = s.Id,
+                Name = s.Name,
+                UnitPrice = s.Price,
+                Quantity = s.Stock,
+                Category = s.Category != null ? s.Category.Name : "N/A"
+            })
+            .ToList();
+    }
+
+    public async Task<StationeryFilterViewModel> FilterAsync(int? categoryId, decimal? minPrice, decimal? maxPrice)
+    {
+        var filtered = await _stationeryRepository.FilterAsync(categoryId, minPrice, maxPrice);
+
+        var items = filtered.Select(s => new StationeryListItemViewModel
+        {
+            Id = s.Id,
+            Name = s.Name,
+            UnitPrice = s.Price,
+            Quantity = s.Stock,
+            Category = s.Category != null ? s.Category.Name : "N/A"
+        }).ToList();
+
+        var allItems = await _stationeryRepository.GetAllReadOnlyAsync();
+        var categories = allItems
+            .Where(s => s.Category != null)
+            .Select(s => new CategoryOptionViewModel { Id = s.Category!.Id, Name = s.Category.Name })
+            .DistinctBy(c => c.Id)
+            .ToList();
+
+        return new StationeryFilterViewModel
+        {
+            CategoryId = categoryId,
+            MinPrice = minPrice,
+            MaxPrice = maxPrice,
+            Items = items,
+            Categories = categories
         };
     }
 }
