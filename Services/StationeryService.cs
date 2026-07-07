@@ -115,4 +115,47 @@ public class StationeryService
             NeedReorderCount = needReorderCount
         };
     }
+    public List<Stationery> Search(string? keyword, decimal? minPrice)
+{
+    var query = _stationeries.AsEnumerable();
+
+    if (!string.IsNullOrWhiteSpace(keyword))
+    {
+        query = query.Where(item =>
+            item.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+            item.Category.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+            item.Sku.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+    }
+
+    if (minPrice.HasValue)
+    {
+        query = query.Where(item => item.UnitPrice >= minPrice.Value);
+    }
+
+    return query.ToList();
+}
+
+public Stationery Create(StationeryCreateViewModel model)
+{
+    var newId = _stationeries.Count == 0
+        ? 1
+        : _stationeries.Max(item => item.Id) + 1;
+
+    var stationery = new Stationery
+    {
+        Id = newId,
+        Sku = $"NEW-{newId:000}",
+        Name = model.Name,
+        Category = model.Category,
+        Supplier = model.Supplier,
+        UnitPrice = model.UnitPrice,
+        Quantity = model.Quantity,
+        MinStock = model.MinStock,
+        LastUpdatedAt = DateTime.Now
+    };
+
+    _stationeries.Add(stationery);
+
+    return stationery;
+}
 }

@@ -104,4 +104,48 @@ public class StationeryController : Controller
             LastUpdatedAt = item.LastUpdatedAt
         };
     }
+    [HttpGet]
+public IActionResult Search(string? keyword, decimal? minPrice)
+{
+    var items = _stationeryService.Search(keyword, minPrice)
+        .Select(ToListItemViewModel)
+        .ToList();
+
+    var viewModel = new StationerySearchViewModel
+    {
+        Keyword = keyword ?? "",
+        MinPrice = minPrice,
+        Items = items
+    };
+
+    return View(viewModel);
+}
+
+[HttpGet]
+public IActionResult Create()
+{
+    var viewModel = new StationeryCreateViewModel
+    {
+        Quantity = 1,
+        MinStock = 1
+    };
+
+    return View(viewModel);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult Create(StationeryCreateViewModel model)
+{
+    if (!ModelState.IsValid)
+    {
+        return View(model);
+    }
+
+    _stationeryService.Create(model);
+
+    TempData["SuccessMessage"] = "Đã thêm mặt hàng thành công.";
+
+    return RedirectToAction(nameof(Index));
+}
 }

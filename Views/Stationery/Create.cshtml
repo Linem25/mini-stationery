@@ -1,0 +1,114 @@
+@model StationeryCreateViewModel
+
+@{
+    ViewData["Title"] = "Create Stationery";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Create Stationery</h2>
+        <p class="page-description">
+            Form POST dùng asp-for để bind dữ liệu vào StationeryCreateViewModel.
+        </p>
+    </div>
+
+    <a class="btn btn-light"
+       asp-controller="Stationery"
+       asp-action="Index">
+        Quay lại danh sách
+    </a>
+</div>
+
+<div class="form-layout">
+    <form class="form-box"
+          asp-controller="Stationery"
+          asp-action="Create"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="All"></div>
+
+        <div class="form-group">
+            <label asp-for="Name">Tên mặt hàng</label>
+            <input asp-for="Name"
+                   class="form-control"
+                   placeholder="Ví dụ: Bút gel Uni-ball" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Category">Danh mục</label>
+            <input asp-for="Category"
+                   class="form-control"
+                   placeholder="Ví dụ: Bút viết" />
+            <span asp-validation-for="Category" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Supplier">Nhà cung cấp</label>
+            <input asp-for="Supplier"
+                   class="form-control"
+                   placeholder="Ví dụ: Thiên Long" />
+            <span asp-validation-for="Supplier" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="UnitPrice">Giá bán</label>
+            <input asp-for="UnitPrice"
+                   class="form-control"
+                   placeholder="Ví dụ: 12000" />
+            <span asp-validation-for="UnitPrice" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Quantity">Số lượng</label>
+            <input asp-for="Quantity"
+                   class="form-control"
+                   placeholder="Ví dụ: 50" />
+            <span asp-validation-for="Quantity" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="MinStock">Mức tồn tối thiểu</label>
+            <input asp-for="MinStock"
+                   class="form-control"
+                   placeholder="Ví dụ: 10" />
+            <span asp-validation-for="MinStock" class="text-danger"></span>
+        </div>
+
+        <button class="btn" type="submit">
+            Save Stationery
+        </button>
+
+        <a class="btn btn-secondary"
+           asp-controller="Stationery"
+           asp-action="Index">
+            Back to List
+        </a>
+    </form>
+
+    <div class="info-box">
+        <h3>Model Binding từ Form POST</h3>
+
+        <p>
+            Khi bấm Save, ASP.NET Core sẽ đọc các input trong form
+            và tự map vào StationeryCreateViewModel.
+        </p>
+
+        <p>
+            Ví dụ input có <strong>asp-for="Name"</strong>
+            thì dữ liệu sẽ được bind vào property <strong>Name</strong>.
+        </p>
+
+        <p>
+            Nếu tên input không khớp với property, action có thể nhận null hoặc giá trị mặc định.
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,43 @@
+@model StationeryListItemViewModel
+
+<div class="stationery-card">
+    <h3>@Model.Name</h3>
+
+    <p class="stationery-meta">
+        SKU: @Model.Sku
+    </p>
+
+    <p class="stationery-meta">
+        Nhóm: @Model.Category
+    </p>
+
+    <p class="stationery-price">
+        @Model.PriceText
+    </p>
+
+    <p>
+        Số lượng: <strong>@Model.Quantity</strong>
+    </p>
+
+    @if (Model.StockStatus == "Còn hàng")
+    {
+        <span class="badge badge-success">@Model.StockStatus</span>
+    }
+    else if (Model.StockStatus == "Cần nhập thêm")
+    {
+        <span class="badge badge-warning">@Model.StockStatus</span>
+    }
+    else
+    {
+        <span class="badge badge-danger">@Model.StockStatus</span>
+    }
+
+    <div class="card-actions">
+        <a class="btn btn-light"
+           asp-controller="Stationery"
+           asp-action="Detail"
+           asp-route-id="@Model.Id">
+            Xem
+        </a>
+    </div>
+</div>
