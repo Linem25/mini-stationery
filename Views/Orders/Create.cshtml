@@ -1,0 +1,46 @@
+@model OrderCreateViewModel
+
+@{
+    ViewData["Title"] = "Create Order";
+    var stationeries = ViewBag.Stationeries as List<StationeryListItemViewModel>;
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Create Order</h2>
+        <p class="page-description">
+            Tạo đơn hàng mới — sẽ tự động trừ tồn kho khi thành công.
+        </p>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="success-box">@TempData["SuccessMessage"]</div>
+}
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<form class="form-box" asp-controller="Orders" asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="form-group">
+        <label asp-for="StationeryId">Chọn mặt hàng</label>
+        <select asp-for="StationeryId" class="form-control">
+            @if (stationeries != null)
+            {
+                @foreach (var item in stationeries)
+                {
+                    <option value="@item.Id">@item.Name (@item.PriceText)</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Quantity">Số lượng</label>
+        <input asp-for="Quantity" class="form-control" />
+    </div>
+
+    <button class="btn" type="submit">Tạo đơn hàng</button>
+</form>

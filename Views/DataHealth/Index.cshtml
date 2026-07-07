@@ -1,0 +1,37 @@
+@model DataHealthViewModel
+
+@{
+    ViewData["Title"] = "Data Health";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Data Health</h2>
+        <p class="page-description">
+            Trạng thái tổng quan của database và cấu hình.
+        </p>
+    </div>
+</div>
+
+<table class="table">
+    <tr>
+        <th>Seed Data Enabled</th>
+        <td>@Model.SeedDataEnabled</td>
+    </tr>
+    <tr>
+        <th>Database Provider</th>
+        <td>@Model.DatabaseProvider</td>
+    </tr>
+    <tr>
+        <th>Tổng số Category</th>
+        <td>@Model.TotalCategories</td>
+    </tr>
+    <tr>
+        <th>Tổng số Stationery</th>
+        <td>@Model.TotalStationeries</td>
+    </tr>
+    <tr>
+        <th>Tổng số Order</th>
+        <td>@Model.TotalOrders</td>
+    </tr>
+</table>

@@ -1,0 +1,32 @@
+@{
+    ViewData["Title"] = "Categories";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Categories</h2>
+        <p class="page-description">
+            Danh sách nhóm mặt hàng và số lượng sản phẩm trong từng nhóm.
+        </p>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tên nhóm</th>
+            <th>Số mặt hàng</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var category in Model)
+        {
+            <tr>
+                <td>@category.Id</td>
+                <td>@category.Name</td>
+                <td>@category.TotalItems</td>
+            </tr>
+        }
+    </tbody>
+</table>
