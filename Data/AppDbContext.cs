@@ -47,7 +47,16 @@ public class AppDbContext : DbContext
     new Stationery { Id = 3, SupplyCode = "VPP-0003", Name = "Vở kẻ ngang Campus 200 trang", Price = 18000, Stock = 4, CategoryId = 2 },
     new Stationery { Id = 4, SupplyCode = "VPP-0004", Name = "Kéo văn phòng Deli", Price = 15000, Stock = 30, CategoryId = 3 }
 );
+    modelBuilder.Entity<Stationery>()
+    .HasIndex(s => s.SupplyCode)
+    .IsUnique();
 
+modelBuilder.Entity<Stationery>()
+    .Property(s => s.RowVersion)
+    .IsRowVersion();
+
+modelBuilder.Entity<Stationery>()
+    .HasQueryFilter(s => !s.IsDeleted);
         
     }
 }

@@ -8,4 +8,8 @@ public interface IStationeryService
     Task<StationeryDetailViewModel?> GetByIdAsync(int id);
     Task<List<StationeryListItemViewModel>> GetLowStockAsync();
     Task<StationeryFilterViewModel> FilterAsync(int? categoryId, decimal? minPrice, decimal? maxPrice);
+    Task CreateAsync(StationeryCreateViewModel model);
+Task<bool> SoftDeleteAsync(int id);
+Task<List<StationeryTrashItemViewModel>> GetTrashAsync();
+Task<bool> RestoreAsync(int id);
 }

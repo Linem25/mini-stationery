@@ -1,0 +1,40 @@
+@model HealthCheckViewModel
+
+@{
+    ViewData["Title"] = Model.PageTitle;
+}
+
+<h2 class="page-title">@Model.PageTitle</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Check</th>
+            <th>Status</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var check in Model.Checks)
+        {
+            <tr>
+                <td>@check.Name</td>
+                <td>
+                    <span class="badge @(check.Status == "Healthy" ? "badge-success" : "badge-danger")">
+                        @check.Status
+                    </span>
+                </td>
+                <td>@check.Description</td>
+            </tr>
+        }
+        <tr>
+            <td><strong>Overall Status</strong></td>
+            <td>
+                <span class="badge @(Model.OverallStatus == "Healthy" ? "badge-success" : "badge-danger")">
+                    @Model.OverallStatus
+                </span>
+            </td>
+            <td>All checks are healthy.</td>
+        </tr>
+    </tbody>
+</table>

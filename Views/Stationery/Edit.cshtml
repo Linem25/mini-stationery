@@ -1,20 +1,23 @@
-@model StationeryCreateViewModel
+@model StationeryEditViewModel
 
 @{
-    ViewData["Title"] = "Create Stationery";
+    ViewData["Title"] = "Edit Stationery";
 }
 
 <div class="page-header">
     <div>
-        <h2 class="page-title">Create Stationery</h2>
+        <h2 class="page-title">Edit Stationery</h2>
         <p class="page-description">
-            Thêm mặt hàng mới vào hệ thống.
+            Cập nhật thông tin mặt hàng.
         </p>
     </div>
 </div>
 
-<form asp-controller="Stationery" asp-action="Create" method="post" class="form-box">
+<form asp-controller="Stationery" asp-action="Edit" method="post" class="form-box">
     @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="RowVersion" />
 
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -26,7 +29,7 @@
 
     <div class="form-group">
         <label asp-for="SupplyCode"></label>
-        <input asp-for="SupplyCode" class="form-control" placeholder="Ví dụ: VPP-0005" />
+        <input asp-for="SupplyCode" class="form-control" />
         <span asp-validation-for="SupplyCode" class="text-danger"></span>
     </div>
 
@@ -44,7 +47,7 @@
 
     <div class="form-group">
         <label asp-for="CategoryId"></label>
-        <input asp-for="CategoryId" class="form-control" placeholder="Nhập ID nhóm, ví dụ: 1" />
+        <input asp-for="CategoryId" class="form-control" />
         <span asp-validation-for="CategoryId" class="text-danger"></span>
     </div>
 

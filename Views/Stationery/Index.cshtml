@@ -46,37 +46,41 @@
 else
 {
     <table class="table">
-        <thead>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Mã hàng</th>
+            <th>Tên mặt hàng</th>
+            <th>Giá bán</th>
+            <th>Số lượng</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
             <tr>
-                <th>Mã hàng</th>
-                <th>Tên mặt hàng</th>
-                <th>Nhóm</th>
-                <th>Giá bán</th>
-                <th>Số lượng</th>
-                <th>Chi tiết</th>
+                <td>@item.Id</td>
+                <td>@item.SupplyCode</td>
+                <td>@item.Name</td>
+                <td>@item.PriceText</td>
+                <td>@item.Quantity</td>
+                <td>
+                    <a asp-controller="Stationery" asp-action="Detail" asp-route-id="@item.Id">Detail</a>
+                    |
+                    <a asp-controller="Stationery" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
+                    |
+                    <form asp-controller="Stationery" asp-action="Delete" asp-route-id="@item.Id"
+                          method="post" style="display:inline"
+                          onsubmit="return confirm('Bạn chắc chắn muốn xóa mặt hàng này?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-link-danger" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:0;">Delete</button>
+                    </form>
+                </td>
             </tr>
-        </thead>
-
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.SupplyCode</td>
-                    <td>@item.Name</td>
-                    <td>@item.Category</td>
-                    <td>@item.PriceText</td>
-                    <td>@item.Quantity</td>
-                    <td>
-                        <a asp-controller="Stationery"
-                           asp-action="Detail"
-                           asp-route-id="@item.Id">
-                            Xem
-                        </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+        }
+    </tbody>
+</table>
 }
 
 <p class="mt-4">

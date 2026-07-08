@@ -1,24 +1,55 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using MiniStationery.Mvc.Models;
+using Microsoft.EntityFrameworkCore;
+using MiniStationery.Mvc.Data;
+using MiniStationery.Mvc.ViewModels;
 
 namespace MiniStationery.Mvc.Controllers;
 
 public class HomeController : Controller
 {
-    public IActionResult Index()
+    private readonly AppDbContext _context;
+
+    public HomeController(AppDbContext context)
     {
-        return View();
+        _context = context;
     }
 
-    public IActionResult Privacy()
+    public async Task<IActionResult> Index()
     {
-        return View();
+        var model = new DashboardViewModel
+        {
+            TotalStationeries = await _context.Stationeries.IgnoreQueryFilters().CountAsync(),
+            ActiveStationeries = await _context.Stationeries.CountAsync(),
+            DeletedStationeries = await _context.Stationeries.IgnoreQueryFilters().CountAsync(s => s.IsDeleted),
+            LogsToday = CountLogLinesToday()
+        };
+
+        return View(model);
     }
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
+    private int CountLogLinesToday()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        var path = $"logs/lab05-{DateTime.Now:yyyyMMdd}.txt";
+
+        if (!System.IO.File.Exists(path))
+        {
+            return 0;
+        }
+
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream);
+            var count = 0;
+            while (reader.ReadLine() != null)
+            {
+                count++;
+            }
+            return count;
+        }
+        catch
+        {
+            return 0;
+        }
     }
 }

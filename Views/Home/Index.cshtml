@@ -1,37 +1,45 @@
-﻿@{
-    ViewData["Title"] = "Home";
+﻿@model DashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
 }
 
-<div class="lab-hero">
-    <h1>ASP.NET Core MVC Lab02 - Mini Stationery</h1>
+<h2 class="page-title">Admin Dashboard</h2>
 
-    <p>
-        Bài Lab này hướng dẫn xây dựng một website MVC cơ bản
-        <br />
-        để hiển thị danh mục văn phòng phẩm và tình trạng tồn kho.
-    </p>
+<div class="stats-grid">
+    <div class="stat-card" style="background:#2563eb; color:white;">
+        <div class="stat-label" style="color:white;">Stationery</div>
+        <div class="stat-number" style="color:white;">@Model.TotalStationeries</div>
+        <div class="stat-label" style="color:#dbeafe;">All items</div>
+    </div>
+
+    <div class="stat-card" style="background:#16a34a; color:white;">
+        <div class="stat-label" style="color:white;">Active</div>
+        <div class="stat-number" style="color:white;">@Model.ActiveStationeries</div>
+        <div class="stat-label" style="color:#dcfce7;">IsDeleted = false</div>
+    </div>
+
+    <div class="stat-card" style="background:#ea580c; color:white;">
+        <div class="stat-label" style="color:white;">Deleted</div>
+        <div class="stat-number" style="color:white;">@Model.DeletedStationeries</div>
+        <div class="stat-label" style="color:#ffedd5;">In trash</div>
+    </div>
+
+    <div class="stat-card" style="background:#7c3aed; color:white;">
+        <div class="stat-label" style="color:white;">Logs Today</div>
+        <div class="stat-number" style="color:white;">@Model.LogsToday</div>
+        <div class="stat-label" style="color:#ede9fe;">Serilog entries</div>
+    </div>
 </div>
 
-<div class="info-panel">
-    <h4>Mục tiêu chính của Lab02</h4>
-    <p>
-        Hiểu và sử dụng Controller, ViewModel và Razor Syntax
-        để hiển thị dữ liệu trong ASP.NET Core MVC.
-    </p>
-</div>
-
-<h3>Luồng xử lý chính trong MVC</h3>
-
-<ol class="flow-list">
-    <li>1. User gửi request đến URL.</li>
-    <li>2. Controller Action nhận request.</li>
-    <li>3. Controller gọi Service để lấy dữ liệu.</li>
-    <li>4. Controller chuyển dữ liệu sang ViewModel.</li>
-    <li>5. View dùng Razor để render HTML và trả về cho trình duyệt.</li>
-</ol>
-
-<div class="text-center mt-4">
-    <a class="btn btn-primary btn-lg" href="/Stationery">
-        Đi đến Stationery Catalog
-    </a>
+<div class="form-box mt-4">
+    <h3>Quick Links</h3>
+    <div class="stationery-grid">
+        <a class="btn btn-light" asp-controller="Stationery" asp-action="Index">Stationery List</a>
+        <a class="btn btn-light" asp-controller="Stationery" asp-action="Create">Create Stationery</a>
+        <a class="btn btn-light" asp-controller="Stationery" asp-action="Trash">Trash (Deleted)</a>
+        <a class="btn btn-light" asp-controller="AuditLogs" asp-action="Index">Audit Logs</a>
+        <a class="btn btn-light" href="/Health/Ready">Health Check</a>
+        <a class="btn btn-light" href="/ApiDemo/StationeryError?id=9999">API Docs / Demo</a>
+    </div>
 </div>

@@ -1,0 +1,42 @@
+@model List<AuditLogItemViewModel>
+
+@{
+    ViewData["Title"] = "Audit Logs";
+}
+
+<h2 class="page-title">Audit Logs</h2>
+
+@if (Model.Count == 0)
+{
+    <p>Chưa có log nào được ghi hôm nay.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Level</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var log in Model)
+            {
+                var colorClass = log.Level switch
+                {
+                    "Warning" => "text-warning",
+                    "Error" => "text-danger",
+                    "Fatal" => "text-danger",
+                    _ => ""
+                };
+
+                <tr>
+                    <td>@log.Time</td>
+                    <td class="@colorClass">@log.Level</td>
+                    <td class="@colorClass">@log.Message</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
