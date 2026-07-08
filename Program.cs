@@ -3,11 +3,11 @@ using MiniStationery.Mvc.Options;
 using MiniStationery.Mvc.Repositories;
 using MiniStationery.Mvc.Services;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 
-// Tạo logger sớm trước builder
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.Console()
@@ -71,36 +71,42 @@ try
     app.UseAuthorization();
 
     app.MapHealthChecks("/api/health/live", new HealthCheckOptions
-{
-    Predicate = check => check.Tags.Contains("live")
-});
-
-app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
-{
-    Predicate = check => check.Tags.Contains("ready")
-});
-
-    app.MapGet("/api/stationery/{id:int}", async (
-        int id,
-        AppDbContext db,
-        HttpContext http) =>
     {
-        var item = await db.Stationeries
-            .AsNoTracking()
-            .Include(s => s.Category)
-            .FirstOrDefaultAsync(s => s.Id == id);
+        Predicate = check => check.Tags.Contains("live")
+    });
 
-        if (item == null)
+    app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready")
+    });
+
+    app.MapGet("/api/stationery/{id:int}", async (int id, AppDbContext db, HttpContext http) =>
+    {
+        var stationery = await db.Stationeries.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        if (stationery == null)
         {
+            var problem = new ProblemDetails
+            {
+                Type = "https://example.com/problems/stationery-not-found",
+                Title = "Stationery not found",
+                Detail = $"The stationery with id {id} was not found.",
+                Status = StatusCodes.Status404NotFound,
+                Instance = http.Request.Path
+            };
+            problem.Extensions["errorCode"] = "STATIONERY_NOT_FOUND";
+            problem.Extensions["traceId"] = http.TraceIdentifier;
+            problem.Extensions["timestamp"] = DateTimeOffset.UtcNow;
+
             return Results.Problem(
-                type: "https://example.com/problems/stationery-not-found",
-                title: "Stationery not found",
-                detail: $"Không tìm thấy mặt hàng với Id = {id}.",
-                statusCode: StatusCodes.Status404NotFound,
-                instance: http.Request.Path);
+                type: problem.Type,
+                title: problem.Title,
+                detail: problem.Detail,
+                statusCode: problem.Status,
+                instance: problem.Instance,
+                extensions: problem.Extensions);
         }
 
-        return Results.Ok(item);
+        return Results.Ok(stationery);
     });
 
     app.MapDefaultControllerRoute();

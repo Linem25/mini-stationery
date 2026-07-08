@@ -1,0 +1,30 @@
+@model StationeryAdjustStockViewModel
+
+@{
+    ViewData["Title"] = "Điều chỉnh tồn kho";
+}
+
+<h2 class="page-title">Điều chỉnh tồn kho: @Model.Name</h2>
+
+<div class="info-box">
+    Số lượng hiện tại: <strong>@Model.CurrentStock</strong>
+</div>
+
+<form class="form-box" asp-controller="Stationery" asp-action="AdjustStock" asp-route-id="@Model.Id" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="RowVersion" />
+    <input type="hidden" asp-for="CurrentStock" />
+
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="form-group">
+        <label asp-for="Adjustment">Số lượng thay đổi (âm để xuất bớt, dương để nhập thêm)</label>
+        <input asp-for="Adjustment" class="form-control" placeholder="Ví dụ: 10 hoặc -5" />
+        <span asp-validation-for="Adjustment" class="text-danger"></span>
+    </div>
+
+    <button class="btn" type="submit">Cập nhật</button>
+    <a class="btn btn-light" asp-controller="Stationery" asp-action="Detail" asp-route-id="@Model.Id">Hủy</a>
+</form>

@@ -185,4 +185,26 @@ public async Task<bool> RestoreAsync(int id)
     _logger.LogInformation("Stationery restored. Id={Id}", id);
     return true;
 }
+
+public async Task<StationerySearchAdvancedViewModel> SearchAsync(string? keyword, string? stockStatus)
+{
+    var results = await _stationeryRepository.SearchAsync(keyword, stockStatus);
+
+    var items = results.Select(s => new StationeryListItemViewModel
+    {
+        Id = s.Id,
+        SupplyCode = s.SupplyCode,
+        Name = s.Name,
+        UnitPrice = s.Price,
+        Quantity = s.Stock,
+        Category = s.Category != null ? s.Category.Name : "N/A"
+    }).ToList();
+
+    return new StationerySearchAdvancedViewModel
+    {
+        Keyword = keyword,
+        StockStatus = stockStatus,
+        Items = items
+    };
+}
 }

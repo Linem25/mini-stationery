@@ -12,4 +12,6 @@ public interface IStationeryService
 Task<bool> SoftDeleteAsync(int id);
 Task<List<StationeryTrashItemViewModel>> GetTrashAsync();
 Task<bool> RestoreAsync(int id);
+
+Task<StationerySearchAdvancedViewModel> SearchAsync(string? keyword, string? stockStatus);
 }

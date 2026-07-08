@@ -144,4 +144,73 @@ public class StationeryController : Controller
 
         return RedirectToAction(nameof(Trash));
     }
+    [HttpGet]
+public async Task<IActionResult> Search(string? keyword, string? stockStatus)
+{
+    var viewModel = await _stationeryService.SearchAsync(keyword, stockStatus);
+    return View(viewModel);
+}
+
+[HttpGet]
+public async Task<IActionResult> AdjustStock(int id)
+{
+    var stationery = await _context.Stationeries.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+    if (stationery == null) return NotFound();
+
+    var model = new StationeryAdjustStockViewModel
+    {
+        Id = stationery.Id,
+        Name = stationery.Name,
+        CurrentStock = stationery.Stock,
+        Adjustment = 0,
+        RowVersion = Convert.ToBase64String(stationery.RowVersion)
+    };
+
+    return View(model);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> AdjustStock(int id, StationeryAdjustStockViewModel model)
+{
+    if (id != model.Id) return NotFound();
+
+    var stationery = await _context.Stationeries.FirstOrDefaultAsync(s => s.Id == id);
+    if (stationery == null) return NotFound();
+
+    var newStock = stationery.Stock + model.Adjustment;
+
+    if (newStock < 0)
+    {
+        ModelState.AddModelError(nameof(model.Adjustment), "Số lượng sau điều chỉnh không được nhỏ hơn 0.");
+        model.CurrentStock = stationery.Stock;
+        model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
+        return View(model);
+    }
+
+    stationery.Stock = newStock;
+    stationery.UpdatedAt = DateTime.Now;
+
+    _context.Entry(stationery).Property("RowVersion").OriginalValue =
+        Convert.FromBase64String(model.RowVersion);
+
+    try
+    {
+        await _context.SaveChangesAsync();
+        _logger.LogInformation(
+            "Stock adjusted. Id={Id}, Adjustment={Adjustment}, NewStock={NewStock}",
+            id, model.Adjustment, newStock);
+
+        TempData["Success"] = $"Đã điều chỉnh tồn kho thành công. Số lượng mới: {newStock}";
+        return RedirectToAction(nameof(Detail), new { id });
+    }
+    catch (DbUpdateConcurrencyException)
+    {
+        ModelState.AddModelError(string.Empty,
+            "Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang và thử lại.");
+        model.CurrentStock = stationery.Stock;
+        model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
+        return View(model);
+    }
+}
 }

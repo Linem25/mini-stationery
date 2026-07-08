@@ -49,4 +49,32 @@ public class StationeryRepository : IStationeryRepository
 
         return await query.ToListAsync();
     }
+
+    public async Task<List<Stationery>> SearchAsync(string? keyword, string? stockStatus)
+{
+
+    var query = _context.Stationeries
+        .Include(s => s.Category)
+        .AsNoTracking()
+        .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(keyword))
+    {
+        
+        query = query.Where(s =>
+            s.Name.Contains(keyword) ||
+            s.SupplyCode.Contains(keyword));
+    }
+
+    query = stockStatus switch
+    {
+        "out" => query.Where(s => s.Stock <= 0),
+        "low" => query.Where(s => s.Stock > 0 && s.Stock <= 10),
+        "available" => query.Where(s => s.Stock > 10),
+        _ => query
+    };
+
+    return await query.ToListAsync();
+}
+
 }

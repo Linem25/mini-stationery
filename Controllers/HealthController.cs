@@ -31,4 +31,25 @@ public class HealthController : Controller
 
         return View("Index", model);
     }
+
+    [HttpGet]
+[Route("/api/health/ready")]
+public async Task<IActionResult> ReadyJson()
+{
+    var report = await _healthCheckService.CheckHealthAsync();
+
+    var result = new
+    {
+        status = report.Status.ToString(),
+        totalDuration = report.TotalDuration.TotalMilliseconds,
+        checks = report.Entries.Select(e => new
+        {
+            name = e.Key,
+            status = e.Value.Status.ToString(),
+            description = e.Value.Description
+        })
+    };
+
+    return Json(result);
+}
 }

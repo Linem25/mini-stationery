@@ -9,5 +9,6 @@ public interface IStationeryRepository
     Task<Stationery?> GetByIdAsync(int id);
     Task AddAsync(Stationery stationery);
     Task SaveChangesAsync();
-    Task<List<Stationery>> FilterAsync(int? categoryId, decimal? minPrice, decimal? maxPrice);   // ← thêm dòng này
+    Task<List<Stationery>> FilterAsync(int? categoryId, decimal? minPrice, decimal? maxPrice);   
+    Task<List<Stationery>> SearchAsync(string? keyword, string? stockStatus);
 }
