@@ -11,13 +11,19 @@ public class StationeryService : IStationeryService
 {
     private readonly IStationeryRepository _stationeryRepository;
     private readonly AppSettings _settings;
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<StationeryService> _logger;
 
-    public StationeryService(IStationeryRepository stationeryRepository, IOptions<AppSettings> options)
+    public StationeryService(
+        IStationeryRepository stationeryRepository,
+        IOptions<AppSettings> options,
+        ApplicationDbContext context,
+        ILogger<StationeryService> logger)
     {
         _stationeryRepository = stationeryRepository;
         _settings = options.Value;
+        _context = context;
+        _logger = logger;
     }
 
     public async Task<List<StationeryListItemViewModel>> GetStationeryListAsync()
@@ -43,14 +49,15 @@ public class StationeryService : IStationeryService
         return new StationeryDetailViewModel
         {
             Id = stationery.Id,
-            Sku = "",
+            Sku = stationery.SupplyCode,
             Name = stationery.Name,
             Category = stationery.Category != null ? stationery.Category.Name : "N/A",
             Supplier = "",
             UnitPrice = stationery.Price,
             Quantity = stationery.Stock,
             MinStock = 0,
-            LastUpdatedAt = DateTime.Now
+            Description = stationery.Description,
+            LastUpdatedAt = stationery.UpdatedAt ?? stationery.CreatedAt
         };
     }
 
@@ -101,110 +108,98 @@ public class StationeryService : IStationeryService
         };
     }
 
-    public StationeryService(
-    IStationeryRepository stationeryRepository,
-    IOptions<AppSettings> options,
-    AppDbContext context,
-    ILogger<StationeryService> logger)
-{
-    _stationeryRepository = stationeryRepository;
-    _settings = options.Value;
-    _context = context;
-    _logger = logger;
-}
-
-public async Task CreateAsync(StationeryCreateViewModel model)
-{
-    var exists = await _context.Stationeries
-        .IgnoreQueryFilters()
-        .AnyAsync(s => s.SupplyCode == model.SupplyCode);
-
-    if (exists)
+    public async Task CreateAsync(StationeryCreateViewModel model)
     {
-        throw new InvalidOperationException("Mã hàng này đã tồn tại.");
+        var exists = await _context.Stationeries
+            .IgnoreQueryFilters()
+            .AnyAsync(s => s.SupplyCode == model.SupplyCode);
+
+        if (exists)
+        {
+            throw new InvalidOperationException("Mã hàng này đã tồn tại.");
+        }
+
+        var stationery = new Models.Stationery
+        {
+            Name = model.Name,
+            SupplyCode = model.SupplyCode,
+            Price = model.Price,
+            Stock = model.Stock,
+            CategoryId = model.CategoryId,
+            Description = model.Description,
+            CreatedAt = DateTime.Now
+        };
+
+        _context.Stationeries.Add(stationery);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Stationery created. Id={Id}, SupplyCode={SupplyCode}", stationery.Id, stationery.SupplyCode);
     }
 
-    var stationery = new Models.Stationery
+    public async Task<bool> SoftDeleteAsync(int id)
     {
-        Name = model.Name,
-        SupplyCode = model.SupplyCode,
-        Price = model.Price,
-        Stock = model.Stock,
-        CategoryId = model.CategoryId,
-        Description = model.Description,
-        CreatedAt = DateTime.Now
-    };
+        var stationery = await _context.Stationeries.FirstOrDefaultAsync(s => s.Id == id);
+        if (stationery == null) return false;
 
-    _context.Stationeries.Add(stationery);
-    await _context.SaveChangesAsync();
-    _logger.LogInformation("Stationery created. Id={Id}, SupplyCode={SupplyCode}", stationery.Id, stationery.SupplyCode);
-}
+        stationery.IsDeleted = true;
+        stationery.DeletedAt = DateTime.Now;
+        stationery.UpdatedAt = DateTime.Now;
 
-public async Task<bool> SoftDeleteAsync(int id)
-{
-    var stationery = await _context.Stationeries.FirstOrDefaultAsync(s => s.Id == id);
-    if (stationery == null) return false;
+        await _context.SaveChangesAsync();
+        _logger.LogWarning("Stationery soft deleted. Id={Id}", id);
+        return true;
+    }
 
-    stationery.IsDeleted = true;
-    stationery.DeletedAt = DateTime.Now;
-    stationery.UpdatedAt = DateTime.Now;
+    public async Task<List<StationeryTrashItemViewModel>> GetTrashAsync()
+    {
+        return await _context.Stationeries
+            .IgnoreQueryFilters()
+            .Where(s => s.IsDeleted)
+            .AsNoTracking()
+            .Select(s => new StationeryTrashItemViewModel
+            {
+                Id = s.Id,
+                Name = s.Name,
+                DeletedAt = s.DeletedAt
+            })
+            .ToListAsync();
+    }
 
-    await _context.SaveChangesAsync();
-    _logger.LogWarning("Stationery soft deleted. Id={Id}", id);
-    return true;
-}
+    public async Task<bool> RestoreAsync(int id)
+    {
+        var stationery = await _context.Stationeries
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(s => s.Id == id && s.IsDeleted);
 
-public async Task<List<StationeryTrashItemViewModel>> GetTrashAsync()
-{
-    return await _context.Stationeries
-        .IgnoreQueryFilters()
-        .Where(s => s.IsDeleted)
-        .AsNoTracking()
-        .Select(s => new StationeryTrashItemViewModel
+        if (stationery == null) return false;
+
+        stationery.IsDeleted = false;
+        stationery.DeletedAt = null;
+        stationery.UpdatedAt = DateTime.Now;
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Stationery restored. Id={Id}", id);
+        return true;
+    }
+
+    public async Task<StationerySearchAdvancedViewModel> SearchAsync(string? keyword, string? stockStatus)
+    {
+        var results = await _stationeryRepository.SearchAsync(keyword, stockStatus);
+
+        var items = results.Select(s => new StationeryListItemViewModel
         {
             Id = s.Id,
+            SupplyCode = s.SupplyCode,
             Name = s.Name,
-            DeletedAt = s.DeletedAt
-        })
-        .ToListAsync();
-}
+            UnitPrice = s.Price,
+            Quantity = s.Stock,
+            Category = s.Category != null ? s.Category.Name : "N/A"
+        }).ToList();
 
-public async Task<bool> RestoreAsync(int id)
-{
-    var stationery = await _context.Stationeries
-        .IgnoreQueryFilters()
-        .FirstOrDefaultAsync(s => s.Id == id && s.IsDeleted);
-
-    if (stationery == null) return false;
-
-    stationery.IsDeleted = false;
-    stationery.DeletedAt = null;
-    stationery.UpdatedAt = DateTime.Now;
-
-    await _context.SaveChangesAsync();
-    _logger.LogInformation("Stationery restored. Id={Id}", id);
-    return true;
-}
-
-public async Task<StationerySearchAdvancedViewModel> SearchAsync(string? keyword, string? stockStatus)
-{
-    var results = await _stationeryRepository.SearchAsync(keyword, stockStatus);
-
-    var items = results.Select(s => new StationeryListItemViewModel
-    {
-        Id = s.Id,
-        SupplyCode = s.SupplyCode,
-        Name = s.Name,
-        UnitPrice = s.Price,
-        Quantity = s.Stock,
-        Category = s.Category != null ? s.Category.Name : "N/A"
-    }).ToList();
-
-    return new StationerySearchAdvancedViewModel
-    {
-        Keyword = keyword,
-        StockStatus = stockStatus,
-        Items = items
-    };
-}
+        return new StationerySearchAdvancedViewModel
+        {
+            Keyword = keyword,
+            StockStatus = stockStatus,
+            Items = items
+        };
+    }
 }

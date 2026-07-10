@@ -7,9 +7,9 @@ namespace MiniStationery.Mvc.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public HomeController(AppDbContext context)
+    public HomeController(ApplicationDbContext context)
     {
         _context = context;
     }
@@ -19,37 +19,11 @@ public class HomeController : Controller
         var model = new DashboardViewModel
         {
             TotalStationeries = await _context.Stationeries.IgnoreQueryFilters().CountAsync(),
-            ActiveStationeries = await _context.Stationeries.CountAsync(),
-            DeletedStationeries = await _context.Stationeries.IgnoreQueryFilters().CountAsync(s => s.IsDeleted),
-            LogsToday = CountLogLinesToday()
+            TotalOrders = await _context.Orders.CountAsync(),
+            TotalAuditLogs = await _context.AuditLogs.CountAsync(),
+            SecurityControlsEnabled = 8 
         };
 
         return View(model);
-    }
-
-    private int CountLogLinesToday()
-    {
-        var path = $"logs/lab05-{DateTime.Now:yyyyMMdd}.txt";
-
-        if (!System.IO.File.Exists(path))
-        {
-            return 0;
-        }
-
-        try
-        {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var reader = new StreamReader(stream);
-            var count = 0;
-            while (reader.ReadLine() != null)
-            {
-                count++;
-            }
-            return count;
-        }
-        catch
-        {
-            return 0;
-        }
     }
 }

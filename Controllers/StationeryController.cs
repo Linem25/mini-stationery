@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MiniStationery.Mvc.Data;
@@ -6,20 +7,23 @@ using MiniStationery.Mvc.ViewModels;
 
 namespace MiniStationery.Mvc.Controllers;
 
+[Authorize(Policy = "CanViewStationery")]
 public class StationeryController : Controller
 {
     private readonly IStationeryService _stationeryService;
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<StationeryController> _logger;
-
+private readonly IAuditLogService _auditLogService;
     public StationeryController(
         IStationeryService stationeryService,
-        AppDbContext context,
-        ILogger<StationeryController> logger)
+        ApplicationDbContext context,
+        ILogger<StationeryController> logger,
+        IAuditLogService auditLogService) 
     {
         _stationeryService = stationeryService;
         _context = context;
         _logger = logger;
+        _auditLogService = auditLogService; 
     }
 
     public async Task<IActionResult> Index()
@@ -40,12 +44,14 @@ public class StationeryController : Controller
         return View(item);
     }
 
+    [Authorize(Policy = "CanManageStationery")]
     [HttpGet]
     public IActionResult Create()
     {
         return View(new StationeryCreateViewModel());
     }
 
+    [Authorize(Policy = "CanManageStationery")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(StationeryCreateViewModel model)
@@ -66,6 +72,7 @@ public class StationeryController : Controller
         }
     }
 
+    [Authorize(Policy = "CanManageStationery")]
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
@@ -83,6 +90,7 @@ public class StationeryController : Controller
         return View(model);
     }
 
+    [Authorize(Policy = "CanManageStationery")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, StationeryEditViewModel model)
@@ -118,23 +126,32 @@ public class StationeryController : Controller
         }
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    [Authorize(Policy = "CanManageStationery")]
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Delete(int id)
+{
+    var success = await _stationeryService.SoftDeleteAsync(id);
+    if (!success)
     {
-        var success = await _stationeryService.SoftDeleteAsync(id);
-        if (!success) return NotFound();
-
-        TempData["Success"] = "Đã xóa mềm mặt hàng.";
-        return RedirectToAction(nameof(Index));
+        await _auditLogService.LogAsync("SoftDeleteStationery", "Stationery", id.ToString(), "Failed", "Not found");
+        return NotFound();
     }
 
+    await _auditLogService.LogAsync("SoftDeleteStationery", "Stationery", id.ToString(), "Success");
+
+    TempData["Success"] = "Đã xóa mềm mặt hàng.";
+    return RedirectToAction(nameof(Index));
+}
+
+    [Authorize(Policy = "CanManageStationery")]
     public async Task<IActionResult> Trash()
     {
         var deletedItems = await _stationeryService.GetTrashAsync();
         return View(deletedItems);
     }
 
+    [Authorize(Policy = "CanManageStationery")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Restore(int id)
@@ -144,73 +161,76 @@ public class StationeryController : Controller
 
         return RedirectToAction(nameof(Trash));
     }
+
     [HttpGet]
-public async Task<IActionResult> Search(string? keyword, string? stockStatus)
-{
-    var viewModel = await _stationeryService.SearchAsync(keyword, stockStatus);
-    return View(viewModel);
-}
-
-[HttpGet]
-public async Task<IActionResult> AdjustStock(int id)
-{
-    var stationery = await _context.Stationeries.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
-    if (stationery == null) return NotFound();
-
-    var model = new StationeryAdjustStockViewModel
+    public async Task<IActionResult> Search(string? keyword, string? stockStatus)
     {
-        Id = stationery.Id,
-        Name = stationery.Name,
-        CurrentStock = stationery.Stock,
-        Adjustment = 0,
-        RowVersion = Convert.ToBase64String(stationery.RowVersion)
-    };
+        var viewModel = await _stationeryService.SearchAsync(keyword, stockStatus);
+        return View(viewModel);
+    }
 
-    return View(model);
-}
-
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> AdjustStock(int id, StationeryAdjustStockViewModel model)
-{
-    if (id != model.Id) return NotFound();
-
-    var stationery = await _context.Stationeries.FirstOrDefaultAsync(s => s.Id == id);
-    if (stationery == null) return NotFound();
-
-    var newStock = stationery.Stock + model.Adjustment;
-
-    if (newStock < 0)
+    [Authorize(Policy = "CanManageStationery")]
+    [HttpGet]
+    public async Task<IActionResult> AdjustStock(int id)
     {
-        ModelState.AddModelError(nameof(model.Adjustment), "Số lượng sau điều chỉnh không được nhỏ hơn 0.");
-        model.CurrentStock = stationery.Stock;
-        model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
+        var stationery = await _context.Stationeries.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        if (stationery == null) return NotFound();
+
+        var model = new StationeryAdjustStockViewModel
+        {
+            Id = stationery.Id,
+            Name = stationery.Name,
+            CurrentStock = stationery.Stock,
+            Adjustment = 0,
+            RowVersion = Convert.ToBase64String(stationery.RowVersion)
+        };
+
         return View(model);
     }
 
-    stationery.Stock = newStock;
-    stationery.UpdatedAt = DateTime.Now;
-
-    _context.Entry(stationery).Property("RowVersion").OriginalValue =
-        Convert.FromBase64String(model.RowVersion);
-
-    try
+    [Authorize(Policy = "CanManageStationery")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AdjustStock(int id, StationeryAdjustStockViewModel model)
     {
-        await _context.SaveChangesAsync();
-        _logger.LogInformation(
-            "Stock adjusted. Id={Id}, Adjustment={Adjustment}, NewStock={NewStock}",
-            id, model.Adjustment, newStock);
+        if (id != model.Id) return NotFound();
 
-        TempData["Success"] = $"Đã điều chỉnh tồn kho thành công. Số lượng mới: {newStock}";
-        return RedirectToAction(nameof(Detail), new { id });
+        var stationery = await _context.Stationeries.FirstOrDefaultAsync(s => s.Id == id);
+        if (stationery == null) return NotFound();
+
+        var newStock = stationery.Stock + model.Adjustment;
+
+        if (newStock < 0)
+        {
+            ModelState.AddModelError(nameof(model.Adjustment), "Số lượng sau điều chỉnh không được nhỏ hơn 0.");
+            model.CurrentStock = stationery.Stock;
+            model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
+            return View(model);
+        }
+
+        stationery.Stock = newStock;
+        stationery.UpdatedAt = DateTime.Now;
+
+        _context.Entry(stationery).Property("RowVersion").OriginalValue =
+            Convert.FromBase64String(model.RowVersion);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            _logger.LogInformation(
+                "Stock adjusted. Id={Id}, Adjustment={Adjustment}, NewStock={NewStock}",
+                id, model.Adjustment, newStock);
+
+            TempData["Success"] = $"Đã điều chỉnh tồn kho thành công. Số lượng mới: {newStock}";
+            return RedirectToAction(nameof(Detail), new { id });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            ModelState.AddModelError(string.Empty,
+                "Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang và thử lại.");
+            model.CurrentStock = stationery.Stock;
+            model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
+            return View(model);
+        }
     }
-    catch (DbUpdateConcurrencyException)
-    {
-        ModelState.AddModelError(string.Empty,
-            "Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang và thử lại.");
-        model.CurrentStock = stationery.Stock;
-        model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
-        return View(model);
-    }
-}
 }

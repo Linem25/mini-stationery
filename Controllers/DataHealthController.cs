@@ -9,10 +9,10 @@ namespace MiniStationery.Mvc.Controllers;
 
 public class DataHealthController : Controller
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
     private readonly AppSettings _settings;
 
-    public DataHealthController(AppDbContext context, IOptions<AppSettings> options)
+    public DataHealthController(ApplicationDbContext context, IOptions<AppSettings> options)
     {
         _context = context;
         _settings = options.Value;

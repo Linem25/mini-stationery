@@ -1,45 +1,60 @@
 ﻿@model DashboardViewModel
 
 @{
-    ViewData["Title"] = "Admin Dashboard";
+    ViewData["Title"] = "Final Project Dashboard";
 }
 
-<h2 class="page-title">Admin Dashboard</h2>
+<h2 class="page-title">Final Project Dashboard</h2>
+<p class="page-description">Tổng quan hệ thống, quyền truy cập và trạng thái vận hành.</p>
 
 <div class="stats-grid">
     <div class="stat-card" style="background:#2563eb; color:white;">
-        <div class="stat-label" style="color:white;">Stationery</div>
+        <div class="stat-label" style="color:white; font-weight:bold;">Stationery</div>
         <div class="stat-number" style="color:white;">@Model.TotalStationeries</div>
-        <div class="stat-label" style="color:#dbeafe;">All items</div>
+        <div class="stat-label" style="color:#dbeafe;">Active + deleted</div>
     </div>
 
     <div class="stat-card" style="background:#16a34a; color:white;">
-        <div class="stat-label" style="color:white;">Active</div>
-        <div class="stat-number" style="color:white;">@Model.ActiveStationeries</div>
-        <div class="stat-label" style="color:#dcfce7;">IsDeleted = false</div>
+        <div class="stat-label" style="color:white; font-weight:bold;">Orders</div>
+        <div class="stat-number" style="color:white;">@Model.TotalOrders</div>
+        <div class="stat-label" style="color:#dcfce7;">Created by transaction</div>
     </div>
 
     <div class="stat-card" style="background:#ea580c; color:white;">
-        <div class="stat-label" style="color:white;">Deleted</div>
-        <div class="stat-number" style="color:white;">@Model.DeletedStationeries</div>
-        <div class="stat-label" style="color:#ffedd5;">In trash</div>
+        <div class="stat-label" style="color:white; font-weight:bold;">Audit Logs</div>
+        <div class="stat-number" style="color:white;">@Model.TotalAuditLogs</div>
+        <div class="stat-label" style="color:#ffedd5;">Sensitive actions</div>
     </div>
 
     <div class="stat-card" style="background:#7c3aed; color:white;">
-        <div class="stat-label" style="color:white;">Logs Today</div>
-        <div class="stat-number" style="color:white;">@Model.LogsToday</div>
-        <div class="stat-label" style="color:#ede9fe;">Serilog entries</div>
+        <div class="stat-label" style="color:white; font-weight:bold;">Security</div>
+        <div class="stat-number" style="color:white;">@Model.SecurityControlsEnabled/@Model.SecurityControlsTotal</div>
+        <div class="stat-label" style="color:#ede9fe;">Controls enabled</div>
     </div>
 </div>
 
-<div class="form-box mt-4">
-    <h3>Quick Links</h3>
-    <div class="stationery-grid">
-        <a class="btn btn-light" asp-controller="Stationery" asp-action="Index">Stationery List</a>
-        <a class="btn btn-light" asp-controller="Stationery" asp-action="Create">Create Stationery</a>
-        <a class="btn btn-light" asp-controller="Stationery" asp-action="Trash">Trash (Deleted)</a>
-        <a class="btn btn-light" asp-controller="AuditLogs" asp-action="Index">Audit Logs</a>
-        <a class="btn btn-light" href="/Health/Ready">Health Check</a>
-        <a class="btn btn-light" href="/ApiDemo/StationeryError?id=9999">API Docs / Demo</a>
+<div class="stationery-grid mt-4">
+    <div class="form-box">
+        <h3>Role-based quick actions</h3>
+        <ul style="list-style:none; padding-left:0;">
+            <li>✓ Admin: Create / Edit / Delete Stationery</li>
+            <li>✓ Staff: View Stationery and Orders only</li>
+            <li>✓ User: View public catalog</li>
+            <li>✓ Anonymous: Login / Register only</li>
+        </ul>
+    </div>
+
+    <div class="info-box">
+        <h3>Security checklist</h3>
+        <ul>
+            <li>Cookie authentication</li>
+            <li>Anti-forgery token on POST</li>
+            <li>Razor encoding, no Html.Raw</li>
+            <li>EF Core LINQ / parameterized query</li>
+            <li>Safe image upload</li>
+            <li>Soft delete + Global Query Filter</li>
+            <li>Concurrency handling (RowVersion)</li>
+            <li>ProblemDetails with errorCode + traceId</li>
+        </ul>
     </div>
 </div>

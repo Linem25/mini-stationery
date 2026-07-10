@@ -1,49 +1,28 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MiniStationery.Mvc.ViewModels;
-using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
+using MiniStationery.Mvc.Data;
 
 namespace MiniStationery.Mvc.Controllers;
 
+[Authorize(Policy = "CanViewAuditLog")]
 public class AuditLogsController : Controller
 {
-    public IActionResult Index()
+    private readonly ApplicationDbContext _context;
+
+    public AuditLogsController(ApplicationDbContext context)
     {
-        var logs = new List<AuditLogItemViewModel>();
-        var path = $"logs/stationery-{DateTime.Now:yyyyMMdd}.txt";
+        _context = context;
+    }
 
-        if (System.IO.File.Exists(path))
-        {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var reader = new StreamReader(stream);
+    public async Task<IActionResult> Index()
+    {
+        var logs = await _context.AuditLogs
+            .OrderByDescending(l => l.CreatedAt)
+            .Take(100)
+            .AsNoTracking()
+            .ToListAsync();
 
-            string? line;
-            var pattern = @"^\[(?<time>[\d\-:. ]+)\s(?<level>\w+)\]\s(?<message>.+)$";
-
-            while ((line = reader.ReadLine()) != null)
-            {
-                var match = Regex.Match(line, pattern);
-                if (match.Success)
-                {
-                    logs.Add(new AuditLogItemViewModel
-                    {
-                        Time = match.Groups["time"].Value.Trim(),
-                        Level = match.Groups["level"].Value.Trim(),
-                        Message = match.Groups["message"].Value.Trim()
-                    });
-                }
-                else if (!string.IsNullOrWhiteSpace(line))
-                {
-                    logs.Add(new AuditLogItemViewModel
-                    {
-                        Time = "",
-                        Level = "Info",
-                        Message = line
-                    });
-                }
-            }
-        }
-
-        logs.Reverse();
         return View(logs);
     }
 }

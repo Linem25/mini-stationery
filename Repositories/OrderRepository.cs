@@ -6,9 +6,9 @@ namespace MiniStationery.Mvc.Repositories;
 
 public class OrderRepository : IOrderRepository
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public OrderRepository(AppDbContext context)
+    public OrderRepository(ApplicationDbContext context)
     {
         _context = context;
     }

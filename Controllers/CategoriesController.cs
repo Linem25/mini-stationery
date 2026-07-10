@@ -6,9 +6,9 @@ namespace MiniStationery.Mvc.Controllers;
 
 public class CategoriesController : Controller
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public CategoriesController(AppDbContext context)
+    public CategoriesController(ApplicationDbContext context)
     {
         _context = context;
     }

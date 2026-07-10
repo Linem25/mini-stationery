@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
+using Microsoft.AspNetCore.Identity;
+using MiniStationery.Mvc.Models;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -25,20 +27,45 @@ try
     builder.Services.Configure<AppSettings>(
         builder.Configuration.GetSection("AppSettings"));
 
-    builder.Services.AddDbContext<AppDbContext>(options =>
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
     builder.Services.AddScoped<IStationeryRepository, StationeryRepository>();
     builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-
     builder.Services.AddScoped<IStationeryService, StationeryService>();
     builder.Services.AddScoped<IOrderService, OrderService>();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+    builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+
+    builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+    {
+        options.Password.RequiredLength = 6;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = false;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
+    builder.Services.ConfigureApplicationCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+    });
+
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("CanViewStationery", p => p.RequireRole("Admin", "Staff"));
+        options.AddPolicy("CanManageStationery", p => p.RequireRole("Admin"));
+        options.AddPolicy("CanViewAuditLog", p => p.RequireRole("Admin"));
+        options.AddPolicy("CanUploadStationeryImage", p => p.RequireRole("Admin"));
+    });
 
     builder.Services.AddHealthChecks()
         .AddCheck("self",
             () => HealthCheckResult.Healthy("Stationery Store đang chạy bình thường."),
             tags: new[] { "live" })
-        .AddDbContextCheck<AppDbContext>("database",
+        .AddDbContextCheck<ApplicationDbContext>("database",
             tags: new[] { "ready" });
 
     builder.Services.AddProblemDetails(options =>
@@ -54,6 +81,11 @@ try
 
     var app = builder.Build();
 
+    using (var scope = app.Services.CreateScope())
+    {
+        await DbInitializer.SeedIdentityAsync(scope.ServiceProvider);
+    }
+
     if (app.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
@@ -68,6 +100,8 @@ try
 
     app.UseStaticFiles();
     app.UseRouting();
+
+    app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapHealthChecks("/api/health/live", new HealthCheckOptions
@@ -80,7 +114,7 @@ try
         Predicate = check => check.Tags.Contains("ready")
     });
 
-    app.MapGet("/api/stationery/{id:int}", async (int id, AppDbContext db, HttpContext http) =>
+    app.MapGet("/api/stationery/{id:int}", async (int id, ApplicationDbContext db, HttpContext http) =>
     {
         var stationery = await db.Stationeries.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
         if (stationery == null)
@@ -111,7 +145,7 @@ try
 
     app.MapDefaultControllerRoute();
 
-    Log.Information("Mini Stationery Lab05 đang khởi động...");
+    Log.Information("Mini Stationery Lab06 đang khởi động...");
 
     app.Run();
 }

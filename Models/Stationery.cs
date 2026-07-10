@@ -21,7 +21,5 @@ public class Stationery
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
-
-    [Timestamp]
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }

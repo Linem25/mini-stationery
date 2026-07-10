@@ -6,9 +6,9 @@ namespace MiniStationery.Mvc.Repositories;
 
 public class StationeryRepository : IStationeryRepository
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public StationeryRepository(AppDbContext context)
+    public StationeryRepository(ApplicationDbContext context)
     {
         _context = context;
     }

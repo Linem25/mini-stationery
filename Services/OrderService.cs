@@ -7,8 +7,8 @@ namespace MiniStationery.Mvc.Services;
 
 public class OrderService : IOrderService
 {
-    private readonly AppDbContext _context;
-    public OrderService(AppDbContext context)
+    private readonly ApplicationDbContext _context;
+    public OrderService(ApplicationDbContext context)
     {
         _context = context;
     }

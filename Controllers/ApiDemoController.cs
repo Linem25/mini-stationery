@@ -6,9 +6,9 @@ namespace MiniStationery.Mvc.Controllers;
 
 public class ApiDemoController : Controller
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public ApiDemoController(AppDbContext context)
+    public ApiDemoController(ApplicationDbContext context)
     {
         _context = context;
     }
