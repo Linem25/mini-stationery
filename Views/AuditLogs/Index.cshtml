@@ -1,14 +1,15 @@
-@model List<AuditLogItemViewModel>
+@model List<AuditLog>
 
 @{
     ViewData["Title"] = "Audit Logs";
 }
 
 <h2 class="page-title">Audit Logs</h2>
+<p class="page-description">Nhật ký các thao tác nhạy cảm trong hệ thống (Create, Edit, Delete, Restore, Upload, Login...).</p>
 
 @if (Model.Count == 0)
 {
-    <p>Chưa có log nào được ghi hôm nay.</p>
+    <p>Chưa có audit log nào được ghi nhận.</p>
 }
 else
 {
@@ -16,25 +17,29 @@ else
         <thead>
             <tr>
                 <th>Time</th>
-                <th>Level</th>
-                <th>Message</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>Entity Id</th>
+                <th>User</th>
+                <th>IP</th>
+                <th>Result</th>
+                <th>Note</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var log in Model)
             {
-                var colorClass = log.Level switch
-                {
-                    "Warning" => "text-warning",
-                    "Error" => "text-danger",
-                    "Fatal" => "text-danger",
-                    _ => ""
-                };
+                var resultClass = log.Result == "Success" ? "text-success" : "text-danger";
 
                 <tr>
-                    <td>@log.Time</td>
-                    <td class="@colorClass">@log.Level</td>
-                    <td class="@colorClass">@log.Message</td>
+                    <td>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                    <td>@log.Action</td>
+                    <td>@log.EntityName</td>
+                    <td>@log.EntityId</td>
+                    <td>@(log.UserName ?? "-")</td>
+                    <td>@(log.IpAddress ?? "-")</td>
+                    <td class="@resultClass">@log.Result</td>
+                    <td>@(log.Note ?? "-")</td>
                 </tr>
             }
         </tbody>
