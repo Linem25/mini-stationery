@@ -4,61 +4,82 @@
     ViewData["Title"] = "Edit Stationery";
 }
 
-<div class="page-header">
-    <div>
-        <h2 class="page-title">Edit Stationery</h2>
-        <p class="page-description">
-            Cập nhật thông tin mặt hàng.
-        </p>
+<h2 class="page-title">Edit Stationery + Safe Image Upload</h2>
+
+<div class="form-layout">
+    <form class="form-box" asp-controller="Stationery" asp-action="Edit" asp-route-id="@Model.Id"
+          method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="RowVersion" />
+
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div class="form-group">
+            <label asp-for="Name">Stationery Name</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="SupplyCode">Mã hàng</label>
+            <input asp-for="SupplyCode" class="form-control" />
+            <span asp-validation-for="SupplyCode" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Price">Price</label>
+            <input asp-for="Price" class="form-control" />
+            <span asp-validation-for="Price" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Stock">Stock Quantity</label>
+            <input asp-for="Stock" class="form-control" />
+            <span asp-validation-for="Stock" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="CategoryId">Category</label>
+            <input asp-for="CategoryId" class="form-control" />
+            <span asp-validation-for="CategoryId" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Description">Description</label>
+            <textarea asp-for="Description" class="form-control"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Stationery Image (.jpg .png .webp, max 2MB)</label>
+
+            @if (!string.IsNullOrEmpty(Model.ExistingImageUrl))
+            {
+                <img src="@Model.ExistingImageUrl" alt="@Model.Name" style="max-width:120px; display:block; margin-bottom:8px; border-radius:6px;" />
+            }
+
+            <input type="file" name="ImageFile" accept=".jpg,.jpeg,.png,.webp" class="form-control" />
+            <span asp-validation-for="ImageFile" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn">Save</button>
+        <a class="btn btn-light" asp-controller="Stationery" asp-action="Detail" asp-route-id="@Model.Id">Cancel</a>
+    </form>
+
+    <div class="info-box">
+        <h4>Upload safety rules</h4>
+        <ul>
+            <li>Whitelist extension: .jpg, .jpeg, .png, .webp</li>
+            <li>Limit file size: 2 MB</li>
+            <li>Generate safe file name with Guid</li>
+            <li>Store public images under wwwroot/uploads/stationery</li>
+            <li>Do not trust client file name or content-type only</li>
+            <li>Show validation message when file is invalid</li>
+        </ul>
     </div>
 </div>
-
-<form asp-controller="Stationery" asp-action="Edit" method="post" class="form-box">
-    @Html.AntiForgeryToken()
-
-    <input type="hidden" asp-for="Id" />
-    <input type="hidden" asp-for="RowVersion" />
-
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    <div class="form-group">
-        <label asp-for="Name"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="SupplyCode"></label>
-        <input asp-for="SupplyCode" class="form-control" />
-        <span asp-validation-for="SupplyCode" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="Price"></label>
-        <input asp-for="Price" class="form-control" />
-        <span asp-validation-for="Price" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="Stock"></label>
-        <input asp-for="Stock" class="form-control" />
-        <span asp-validation-for="Stock" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="CategoryId"></label>
-        <input asp-for="CategoryId" class="form-control" />
-        <span asp-validation-for="CategoryId" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="Description"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Save</button>
-</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

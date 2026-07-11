@@ -26,7 +26,7 @@
             </tr>
 
             <tr>
-                <th>SKU</th>
+                <th>Mã hàng</th>
                 <td>@Model.Sku</td>
             </tr>
 
@@ -76,6 +76,14 @@
             </tr>
 
             <tr>
+                <th>Mô tả</th>
+                <td>
+                    @* Safe: Razor tự encode, chống XSS *@
+                    <p>@Model.Description</p>
+                </td>
+            </tr>
+
+            <tr>
                 <th>Cập nhật lần cuối</th>
                 <td>@Model.LastUpdatedText</td>
             </tr>
@@ -102,7 +110,31 @@
         </div>
     </div>
 </div>
+
+<div class="form-box mt-4">
+    <h4>Ảnh mặt hàng</h4>
+
+    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+    {
+        <img src="@Model.ImageUrl" alt="@Model.Name" style="max-width:200px; display:block; margin-bottom:12px; border-radius:8px;" />
+    }
+    else
+    {
+        <p class="text-warning">Chưa có ảnh cho mặt hàng này.</p>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="text-danger mb-2">@TempData["Error"]</div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="success-box">@TempData["Success"]</div>
+    }
+
 <form asp-controller="Stationery" asp-action="Delete" asp-route-id="@Model.Id" method="post"
+      class="mt-4"
       onsubmit="return confirm('Bạn chắc chắn muốn xóa mặt hàng này?');">
     @Html.AntiForgeryToken()
     <button type="submit" class="btn" style="background:#dc2626;">Xóa mặt hàng</button>

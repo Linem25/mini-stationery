@@ -56,6 +56,7 @@ public class StationeryService : IStationeryService
             UnitPrice = stationery.Price,
             Quantity = stationery.Stock,
             MinStock = 0,
+            ImageUrl = stationery.ImageUrl,
             Description = stationery.Description,
             LastUpdatedAt = stationery.UpdatedAt ?? stationery.CreatedAt
         };

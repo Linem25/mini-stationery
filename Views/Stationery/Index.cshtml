@@ -1,21 +1,80 @@
-@foreach (var item in Model)
-{
-    <tr>
-        <td>@item.SupplyCode</td>
-        <td>@item.Name</td>
-        <td>@item.PriceText</td>
-        <td>@item.Quantity</td>
-        <td>
-            <a asp-controller="Stationery" asp-action="Detail" asp-route-id="@item.Id">Detail</a>
-            |
-            <a asp-controller="Stationery" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
-            |
-            <form asp-controller="Stationery" asp-action="Delete" asp-route-id="@item.Id"
-                  method="post" style="display:inline"
-                  onsubmit="return confirm('Bạn chắc chắn muốn xóa mặt hàng này?');">
-                @Html.AntiForgeryToken()
-                <button type="submit" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:0;">Delete</button>
-            </form>
-        </td>
-    </tr>
+@model List<StationeryListItemViewModel>
+
+@{
+    ViewData["Title"] = "Stationery Management";
 }
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Stationery Management</h2>
+        <p class="page-description">
+            CRUD + Validation + RowVersion + Soft Delete + Anti-forgery
+        </p>
+    </div>
+
+    @if (User.IsInRole("Admin"))
+    {
+        <a class="btn" asp-controller="Stationery" asp-action="Create">+ Create Stationery</a>
+    }
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="success-box">@TempData["Success"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Mã hàng</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            var (statusText, statusClass) = item.Quantity switch
+            {
+                0 => ("Out of stock", "text-danger"),
+                <= 10 => ("Low stock", "text-warning"),
+                _ => ("Active", "")
+            };
+
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Name</td>
+                <td>@item.SupplyCode</td>
+                <td>@item.PriceText</td>
+                <td>@item.Quantity</td>
+                <td class="@statusClass">@statusText</td>
+                <td>
+                    <a asp-controller="Stationery" asp-action="Detail" asp-route-id="@item.Id">Detail</a>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <text> | </text>
+                        <a asp-controller="Stationery" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
+                        <text> | </text>
+                        <form asp-controller="Stationery" asp-action="Delete" asp-route-id="@item.Id"
+                              method="post" style="display:inline"
+                              onsubmit="return confirm('Xóa mặt hàng này?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:0;">Delete</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="success-box mt-4">
+    <h4>Expected behavior</h4>
+    <p>
+        Only authorized Admin can create/edit/delete. Staff can view. Deleted items move to Trash, not removed from DB.
+    </p>
+</div>

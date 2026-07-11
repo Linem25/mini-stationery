@@ -22,4 +22,5 @@ public class Stationery
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+    public string? ImageUrl { get; set; }
 }
