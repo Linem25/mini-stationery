@@ -30,12 +30,14 @@ public class StationeryController : Controller
         _fileUploadService = fileUploadService;
     }
 
+    // ================= INDEX =================
     public async Task<IActionResult> Index()
     {
         var items = await _stationeryService.GetStationeryListAsync();
         return View(items);
     }
 
+    // ================= DETAIL =================
     public async Task<IActionResult> Detail(int id)
     {
         var item = await _stationeryService.GetByIdAsync(id);
@@ -48,6 +50,7 @@ public class StationeryController : Controller
         return View(item);
     }
 
+    // ================= CREATE =================
     [Authorize(Policy = "CanManageStationery")]
     [HttpGet]
     public IActionResult Create()
@@ -78,6 +81,7 @@ public class StationeryController : Controller
         }
     }
 
+    // ================= EDIT =================
     [Authorize(Policy = "CanManageStationery")]
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
@@ -158,6 +162,7 @@ public class StationeryController : Controller
         }
     }
 
+    // ================= UPLOAD IMAGE =================
     [Authorize(Policy = "CanUploadStationeryImage")]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -191,6 +196,7 @@ public class StationeryController : Controller
         return RedirectToAction(nameof(Detail), new { id });
     }
 
+    // ================= DELETE (Soft Delete) =================
     [Authorize(Policy = "CanManageStationery")]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -209,6 +215,7 @@ public class StationeryController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // ================= TRASH & RESTORE =================
     [Authorize(Policy = "CanManageStationery")]
     public async Task<IActionResult> Trash()
     {
@@ -229,6 +236,7 @@ public class StationeryController : Controller
         return RedirectToAction(nameof(Trash));
     }
 
+    // ================= SEARCH =================
     [HttpGet]
     public async Task<IActionResult> Search(string? keyword, string? stockStatus)
     {
@@ -236,7 +244,8 @@ public class StationeryController : Controller
         return View(viewModel);
     }
 
-    [Authorize(Policy = "CanManageStationery")]
+    // ================= ADJUST STOCK (Feature 1: Admin + Staff) =================
+    [Authorize(Policy = "CanAdjustStock")]
     [HttpGet]
     public async Task<IActionResult> AdjustStock(int id)
     {
@@ -255,7 +264,7 @@ public class StationeryController : Controller
         return View(model);
     }
 
-    [Authorize(Policy = "CanManageStationery")]
+    [Authorize(Policy = "CanAdjustStock")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AdjustStock(int id, StationeryAdjustStockViewModel model)
@@ -269,6 +278,7 @@ public class StationeryController : Controller
 
         if (newStock < 0)
         {
+            await _auditLogService.LogAsync("AdjustStock", "Stationery", id.ToString(), "Failed", "Negative stock rejected");
             ModelState.AddModelError(nameof(model.Adjustment), "Số lượng sau điều chỉnh không được nhỏ hơn 0.");
             model.CurrentStock = stationery.Stock;
             model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
@@ -296,6 +306,7 @@ public class StationeryController : Controller
         }
         catch (DbUpdateConcurrencyException)
         {
+            await _auditLogService.LogAsync("AdjustStock", "Stationery", id.ToString(), "Failed", "Concurrency conflict");
             ModelState.AddModelError(string.Empty,
                 "Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang và thử lại.");
             model.CurrentStock = stationery.Stock;

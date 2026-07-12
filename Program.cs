@@ -59,6 +59,7 @@ try
         options.AddPolicy("CanManageStationery", p => p.RequireRole("Admin"));
         options.AddPolicy("CanViewAuditLog", p => p.RequireRole("Admin"));
         options.AddPolicy("CanUploadStationeryImage", p => p.RequireRole("Admin"));
+        options.AddPolicy("CanAdjustStock", p => p.RequireRole("Admin", "Staff")); 
     });
 
     builder.Services.AddHealthChecks()
