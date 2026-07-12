@@ -13,17 +13,21 @@ public class StationeryController : Controller
     private readonly IStationeryService _stationeryService;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<StationeryController> _logger;
-private readonly IAuditLogService _auditLogService;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IFileUploadService _fileUploadService;
+
     public StationeryController(
         IStationeryService stationeryService,
         ApplicationDbContext context,
         ILogger<StationeryController> logger,
-        IAuditLogService auditLogService) 
+        IAuditLogService auditLogService,
+        IFileUploadService fileUploadService)
     {
         _stationeryService = stationeryService;
         _context = context;
         _logger = logger;
-        _auditLogService = auditLogService; 
+        _auditLogService = auditLogService;
+        _fileUploadService = fileUploadService;
     }
 
     public async Task<IActionResult> Index()
@@ -62,11 +66,13 @@ private readonly IAuditLogService _auditLogService;
         try
         {
             await _stationeryService.CreateAsync(model);
+            await _auditLogService.LogAsync("CreateStationery", "Stationery", model.SupplyCode, "Success");
             TempData["Success"] = "Đã thêm mặt hàng thành công.";
             return RedirectToAction(nameof(Index));
         }
         catch (InvalidOperationException ex)
         {
+            await _auditLogService.LogAsync("CreateStationery", "Stationery", model.SupplyCode, "Failed", ex.Message);
             ModelState.AddModelError(nameof(model.SupplyCode), ex.Message);
             return View(model);
         }
@@ -76,15 +82,20 @@ private readonly IAuditLogService _auditLogService;
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var detail = await _stationeryService.GetByIdAsync(id);
-        if (detail == null) return NotFound();
+        var stationery = await _context.Stationeries.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        if (stationery == null) return NotFound();
 
         var model = new StationeryEditViewModel
         {
-            Id = detail.Id,
-            Name = detail.Name,
-            Price = detail.UnitPrice,
-            Stock = detail.Quantity
+            Id = stationery.Id,
+            Name = stationery.Name,
+            SupplyCode = stationery.SupplyCode,
+            Price = stationery.Price,
+            Stock = stationery.Stock,
+            CategoryId = stationery.CategoryId,
+            Description = stationery.Description,
+            ExistingImageUrl = stationery.ImageUrl,
+            RowVersion = Convert.ToBase64String(stationery.RowVersion)
         };
 
         return View(model);
@@ -109,40 +120,94 @@ private readonly IAuditLogService _auditLogService;
         stationery.Description = model.Description;
         stationery.UpdatedAt = DateTime.Now;
 
+        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        {
+            try
+            {
+                var imagePath = await _fileUploadService.SaveStationeryImageAsync(model.ImageFile);
+                stationery.ImageUrl = imagePath;
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError(nameof(model.ImageFile), ex.Message);
+                model.ExistingImageUrl = stationery.ImageUrl;
+                model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
+                return View(model);
+            }
+        }
+
         _context.Entry(stationery).Property("RowVersion").OriginalValue =
             Convert.FromBase64String(model.RowVersion);
 
         try
         {
             await _context.SaveChangesAsync();
+            await _auditLogService.LogAsync("EditStationery", "Stationery", id.ToString(), "Success");
             _logger.LogInformation("Stationery updated. Id={Id}", id);
-            return RedirectToAction(nameof(Index));
+            TempData["Success"] = "Đã cập nhật mặt hàng thành công.";
+            return RedirectToAction(nameof(Detail), new { id });
         }
         catch (DbUpdateConcurrencyException)
         {
+            await _auditLogService.LogAsync("EditStationery", "Stationery", id.ToString(), "Failed", "Concurrency conflict");
             ModelState.AddModelError(string.Empty,
                 "Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang và thử lại.");
+            model.ExistingImageUrl = stationery.ImageUrl;
+            model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
             return View(model);
         }
     }
 
-    [Authorize(Policy = "CanManageStationery")]
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Delete(int id)
-{
-    var success = await _stationeryService.SoftDeleteAsync(id);
-    if (!success)
+    [Authorize(Policy = "CanUploadStationeryImage")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadImage(int id, IFormFile imageFile)
     {
-        await _auditLogService.LogAsync("SoftDeleteStationery", "Stationery", id.ToString(), "Failed", "Not found");
-        return NotFound();
+        var stationery = await _context.Stationeries.FirstOrDefaultAsync(s => s.Id == id);
+        if (stationery == null) return NotFound();
+
+        if (imageFile == null || imageFile.Length == 0)
+        {
+            TempData["Error"] = "Vui lòng chọn file ảnh.";
+            return RedirectToAction(nameof(Detail), new { id });
+        }
+
+        try
+        {
+            var imagePath = await _fileUploadService.SaveStationeryImageAsync(imageFile);
+            stationery.ImageUrl = imagePath;
+            stationery.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync("UploadStationeryImage", "Stationery", id.ToString(), "Success");
+            TempData["Success"] = "Đã tải ảnh lên thành công.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            await _auditLogService.LogAsync("UploadStationeryImage", "Stationery", id.ToString(), "Failed", ex.Message);
+            TempData["Error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Detail), new { id });
     }
 
-    await _auditLogService.LogAsync("SoftDeleteStationery", "Stationery", id.ToString(), "Success");
+    [Authorize(Policy = "CanManageStationery")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var success = await _stationeryService.SoftDeleteAsync(id);
+        if (!success)
+        {
+            await _auditLogService.LogAsync("SoftDeleteStationery", "Stationery", id.ToString(), "Failed", "Not found");
+            return NotFound();
+        }
 
-    TempData["Success"] = "Đã xóa mềm mặt hàng.";
-    return RedirectToAction(nameof(Index));
-}
+        await _auditLogService.LogAsync("SoftDeleteStationery", "Stationery", id.ToString(), "Success");
+
+        TempData["Success"] = "Đã xóa mềm mặt hàng.";
+        return RedirectToAction(nameof(Index));
+    }
 
     [Authorize(Policy = "CanManageStationery")]
     public async Task<IActionResult> Trash()
@@ -158,6 +223,8 @@ public async Task<IActionResult> Delete(int id)
     {
         var success = await _stationeryService.RestoreAsync(id);
         if (!success) return NotFound();
+
+        await _auditLogService.LogAsync("RestoreStationery", "Stationery", id.ToString(), "Success");
 
         return RedirectToAction(nameof(Trash));
     }
@@ -220,6 +287,9 @@ public async Task<IActionResult> Delete(int id)
             _logger.LogInformation(
                 "Stock adjusted. Id={Id}, Adjustment={Adjustment}, NewStock={NewStock}",
                 id, model.Adjustment, newStock);
+
+            await _auditLogService.LogAsync("AdjustStock", "Stationery", id.ToString(), "Success",
+                $"Adjustment={model.Adjustment}, NewStock={newStock}");
 
             TempData["Success"] = $"Đã điều chỉnh tồn kho thành công. Số lượng mới: {newStock}";
             return RedirectToAction(nameof(Detail), new { id });
