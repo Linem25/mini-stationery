@@ -53,9 +53,12 @@ public class AccountController : Controller
         return RedirectToAction(nameof(Login));
     }
 
+    // ================= Feature 3: ghi audit log khi bị AccessDenied =================
     [AllowAnonymous]
-    public IActionResult AccessDenied()
+    public async Task<IActionResult> AccessDenied(string? returnUrl = null)
     {
+        await _auditLogService.LogAsync("AccessDenied", "Authorization", returnUrl, "Failed",
+            $"User denied access. Path={returnUrl}");
         return View();
     }
 }

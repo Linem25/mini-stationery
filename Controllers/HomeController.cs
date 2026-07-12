@@ -15,15 +15,32 @@ public class HomeController : Controller
     }
 
     public async Task<IActionResult> Index()
-    {
-        var model = new DashboardViewModel
-        {
-            TotalStationeries = await _context.Stationeries.IgnoreQueryFilters().CountAsync(),
-            TotalOrders = await _context.Orders.CountAsync(),
-            TotalAuditLogs = await _context.AuditLogs.CountAsync(),
-            SecurityControlsEnabled = 8 
-        };
+{
+    var today = DateTime.Now.Date;
 
-        return View(model);
-    }
+    var model = new DashboardViewModel
+    {
+        TotalStationeries = await _context.Stationeries.IgnoreQueryFilters().CountAsync(),
+        TotalOrders = await _context.Orders.CountAsync(),
+        TotalAuditLogs = await _context.AuditLogs.CountAsync(),
+        SecurityControlsEnabled = 8,
+
+        AccessDeniedToday = await _context.AuditLogs
+            .AsNoTracking()
+            .CountAsync(l => l.Action == "AccessDenied" && l.CreatedAt >= today),
+
+        SensitiveActionsToday = await _context.AuditLogs
+            .AsNoTracking()
+            .CountAsync(l => l.CreatedAt >= today &&
+                (l.Action == "SoftDeleteStationery" || l.Action == "EditStationery" || l.Action == "AdjustStock")),
+
+        UploadRejectedToday = await _context.AuditLogs
+            .AsNoTracking()
+            .CountAsync(l => (l.Action == "UploadStationeryImage" || l.Action == "ReplaceStationeryImage")
+                && l.Result == "Failed" && l.CreatedAt >= today)
+    };
+
+    return View(model);
+}
+    
 }

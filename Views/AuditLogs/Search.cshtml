@@ -1,0 +1,62 @@
+@model AuditLogSearchViewModel
+
+@{
+    ViewData["Title"] = "Search Audit Logs";
+}
+
+<h2 class="page-title">Search Audit Logs</h2>
+
+<form class="form-box" asp-controller="AuditLogs" asp-action="Search" method="get">
+    <div class="form-group">
+        <label asp-for="UserName"></label>
+        <input asp-for="UserName" class="form-control" />
+    </div>
+    <div class="form-group">
+    <label asp-for="ActionName">Action</label>
+    <input asp-for="ActionName" class="form-control" placeholder="Ví dụ: CreateStationery" />
+</div>
+    <div class="form-group">
+        <label asp-for="Result"></label>
+        <select asp-for="Result" class="form-control">
+            <option value="">-- Tất cả --</option>
+            <option value="Success">Success</option>
+            <option value="Failed">Failed</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label asp-for="FromDate">Từ ngày</label>
+        <input asp-for="FromDate" type="date" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="ToDate">Đến ngày</label>
+        <input asp-for="ToDate" type="date" class="form-control" />
+    </div>
+    <button class="btn" type="submit">Search</button>
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="info-box mt-4">Không tìm thấy audit log nào phù hợp với điều kiện lọc.</div>
+}
+else
+{
+    <table class="table mt-4">
+        <thead>
+            <tr><th>Time</th><th>Action</th><th>Entity</th><th>User</th><th>Result</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var log in Model.Items)
+            {
+                <tr>
+                    <td>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                    @* Các giá trị dưới đây được Razor tự encode -> an toàn khi hiển thị lại dữ liệu filter/log *@
+                    <td>@log.Action</td>
+                    <td>@log.EntityName</td>
+                    <td>@(log.UserName ?? "-")</td>
+                    <td>@log.Result</td>
+                    <td>@(log.Note ?? "-")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
