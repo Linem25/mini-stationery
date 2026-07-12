@@ -3,6 +3,8 @@ namespace MiniStationery.Mvc.Services;
 public class FileUploadService : IFileUploadService
 {
     private readonly IWebHostEnvironment _environment;
+    private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+    private const long MaxFileSize = 2 * 1024 * 1024;
 
     public FileUploadService(IWebHostEnvironment environment)
     {
@@ -11,27 +13,54 @@ public class FileUploadService : IFileUploadService
 
     public async Task<string> SaveStationeryImageAsync(IFormFile file)
     {
-        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-        if (!allowed.Contains(ext))
+        if (!AllowedExtensions.Contains(ext))
         {
-            throw new InvalidOperationException("File type is not allowed.");
+            throw new InvalidOperationException("Định dạng file không được phép. Chỉ chấp nhận .jpg, .jpeg, .png, .webp.");
         }
 
-        if (file.Length > 2 * 1024 * 1024)
+        if (file.Length > MaxFileSize)
         {
-            throw new InvalidOperationException("File is too large.");
+            throw new InvalidOperationException("File vượt quá 2MB.");
+        }
+
+        if (file.Length == 0)
+        {
+            throw new InvalidOperationException("File rỗng.");
         }
 
         var safeName = $"{Guid.NewGuid():N}{ext}";
         var folder = Path.Combine(_environment.WebRootPath, "uploads", "stationery");
         Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, safeName);
+        var fullPath = Path.Combine(folder, safeName);
 
-        using var stream = new FileStream(path, FileMode.CreateNew);
+        using var stream = new FileStream(fullPath, FileMode.CreateNew); 
         await file.CopyToAsync(stream);
 
         return $"/uploads/stationery/{safeName}";
+    }
+
+    public void DeleteStationeryImage(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl)) return;
+
+        var uploadsRoot = Path.Combine(_environment.WebRootPath, "uploads", "stationery");
+        var fileName = Path.GetFileName(imageUrl); 
+        var fullPath = Path.Combine(uploadsRoot, fileName);
+
+       
+        var resolvedPath = Path.GetFullPath(fullPath);
+        var resolvedRoot = Path.GetFullPath(uploadsRoot);
+
+        if (!resolvedPath.StartsWith(resolvedRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            return; 
+        }
+
+        if (File.Exists(resolvedPath))
+        {
+            File.Delete(resolvedPath);
+        }
     }
 }

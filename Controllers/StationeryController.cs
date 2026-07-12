@@ -81,7 +81,7 @@ public class StationeryController : Controller
         }
     }
 
-    // ================= EDIT =================
+    // ================= EDIT (Feature 2: Safe Image Replace) =================
     [Authorize(Policy = "CanManageStationery")]
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
@@ -116,6 +116,25 @@ public class StationeryController : Controller
         var stationery = await _context.Stationeries.FirstOrDefaultAsync(s => s.Id == id);
         if (stationery == null) return NotFound();
 
+        var oldImageUrl = stationery.ImageUrl;
+        string? newImageUrl = null;
+
+        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        {
+            try
+            {
+                newImageUrl = await _fileUploadService.SaveStationeryImageAsync(model.ImageFile);
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _auditLogService.LogAsync("ReplaceStationeryImage", "Stationery", id.ToString(), "Failed", ex.Message);
+                ModelState.AddModelError(nameof(model.ImageFile), ex.Message);
+                model.ExistingImageUrl = oldImageUrl;
+                model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
+                return View(model);
+            }
+        }
+
         stationery.Name = model.Name;
         stationery.SupplyCode = model.SupplyCode;
         stationery.Price = model.Price;
@@ -124,20 +143,9 @@ public class StationeryController : Controller
         stationery.Description = model.Description;
         stationery.UpdatedAt = DateTime.Now;
 
-        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        if (newImageUrl != null)
         {
-            try
-            {
-                var imagePath = await _fileUploadService.SaveStationeryImageAsync(model.ImageFile);
-                stationery.ImageUrl = imagePath;
-            }
-            catch (InvalidOperationException ex)
-            {
-                ModelState.AddModelError(nameof(model.ImageFile), ex.Message);
-                model.ExistingImageUrl = stationery.ImageUrl;
-                model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
-                return View(model);
-            }
+            stationery.ImageUrl = newImageUrl;
         }
 
         _context.Entry(stationery).Property("RowVersion").OriginalValue =
@@ -146,6 +154,13 @@ public class StationeryController : Controller
         try
         {
             await _context.SaveChangesAsync();
+
+            if (newImageUrl != null && !string.IsNullOrEmpty(oldImageUrl))
+            {
+                _fileUploadService.DeleteStationeryImage(oldImageUrl);
+                await _auditLogService.LogAsync("ReplaceStationeryImage", "Stationery", id.ToString(), "Success");
+            }
+
             await _auditLogService.LogAsync("EditStationery", "Stationery", id.ToString(), "Success");
             _logger.LogInformation("Stationery updated. Id={Id}", id);
             TempData["Success"] = "Đã cập nhật mặt hàng thành công.";
@@ -156,13 +171,13 @@ public class StationeryController : Controller
             await _auditLogService.LogAsync("EditStationery", "Stationery", id.ToString(), "Failed", "Concurrency conflict");
             ModelState.AddModelError(string.Empty,
                 "Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang và thử lại.");
-            model.ExistingImageUrl = stationery.ImageUrl;
+            model.ExistingImageUrl = oldImageUrl;
             model.RowVersion = Convert.ToBase64String(stationery.RowVersion);
             return View(model);
         }
     }
 
-    // ================= UPLOAD IMAGE =================
+    // ================= UPLOAD IMAGE (route riêng, giữ tương thích ngược) =================
     [Authorize(Policy = "CanUploadStationeryImage")]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -177,6 +192,8 @@ public class StationeryController : Controller
             return RedirectToAction(nameof(Detail), new { id });
         }
 
+        var oldImageUrl = stationery.ImageUrl;
+
         try
         {
             var imagePath = await _fileUploadService.SaveStationeryImageAsync(imageFile);
@@ -184,12 +201,17 @@ public class StationeryController : Controller
             stationery.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            await _auditLogService.LogAsync("UploadStationeryImage", "Stationery", id.ToString(), "Success");
+            if (!string.IsNullOrEmpty(oldImageUrl))
+            {
+                _fileUploadService.DeleteStationeryImage(oldImageUrl);
+            }
+
+            await _auditLogService.LogAsync("ReplaceStationeryImage", "Stationery", id.ToString(), "Success");
             TempData["Success"] = "Đã tải ảnh lên thành công.";
         }
         catch (InvalidOperationException ex)
         {
-            await _auditLogService.LogAsync("UploadStationeryImage", "Stationery", id.ToString(), "Failed", ex.Message);
+            await _auditLogService.LogAsync("ReplaceStationeryImage", "Stationery", id.ToString(), "Failed", ex.Message);
             TempData["Error"] = ex.Message;
         }
 
